@@ -15,3 +15,7 @@ python libgen-terminal.py -y 2016
 ``` python
 DOWNLOAD_PATH = "your path here"
 ```
+## Preview
+![Image of preview ](preview/file1.png)
+![Image of preview 2 ](preview/file2.png)
+
