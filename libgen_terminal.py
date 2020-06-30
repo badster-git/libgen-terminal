@@ -19,7 +19,6 @@ def getSearchResults(term, page, column):
 
 	if page == 1:
 		booksFound = re.search(r'(\d+) files found', str(soup))
-		#print(booksFound)
 		print(booksFound.group().upper())
 		nBooks = int(booksFound.groups()[0])
 
@@ -61,7 +60,6 @@ def formatBooks(books, page):
 					year, lang, ext, size) # starts at 1
 
 			bookMirrors = {'title': title, 'mirrors': mirrorList}
-			#print(bookMirrors)
 			booksMirrors.append(bookMirrors)
 			contBook += 1
 			fmtBooks.append(book)
@@ -186,7 +184,6 @@ class DownloadBook():
 			for chars in badChars:
 				fileName = fileName.replace(chars, " ")
 			print('Downloading...')
-			print(downloadLink)
 			path = '{}/{}'.format(DOWNLOAD_PATH, fileName)
 			request.urlretrieve(downloadLink, filename=path)
 			print('Book downloaded to {}'.format(os.path.abspath(path)))
@@ -214,8 +211,6 @@ class DownloadBook():
 		req = request.Request(link, headers=DownloadBook.headers)
 		source = request.urlopen(req)
 		soup = BeautifulSoup(source, 'lxml')
-		print(link)
-
 		for a in soup.find_all('a'):
 			if a.text == 'GET':
 				downloadUrl = a.attrs['href']
@@ -229,9 +224,6 @@ class DownloadBook():
 		soup = BeautifulSoup(source, 'lxml')
 		motherUrl = "https://b-ok.cc"
 		mLink = soup.find(attrs={"style": "text-decoration: underline;"})
-
-		print(mLink)
-
 		nextLink = mLink.attrs['href']
 		nextReq = request.Request(motherUrl + nextLink, headers=DownloadBook.headers)
 		nextSource = request.urlopen(nextReq)
@@ -255,7 +247,6 @@ class DownloadBook():
 				next_req = request.Request(mother_url + next_link, headers=DownloadBook.headers)
 				next_source = request.urlopen(next_req)
 				next_soup = BeautifulSoup(next_source, 'lxml')
-				print(next_soup)
 				for next_a in next_soup.find_all('a'):
 					if ' Download  ' in next_a.text:
 						item_url = next_a.attrs['href']
