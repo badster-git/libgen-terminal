@@ -7,8 +7,6 @@ from urllib.parse import urlencode
 from tabulate import tabulate
 from settings import *
 
-
-
 def getSearchResults(term, page, column):
 	params = urlencode({'req': term, 'column': column, 'page': page})
 	# Libgen URL
@@ -51,11 +49,17 @@ def formatBooks(books, page):
 			size = bookAttrs[7].text
 			ext = bookAttrs[8].text
 			mirrorList = {}			# Dictionary for all four mirrors
-			for i in range(9, 14):
-				mirror = i - 9
-				if bookAttrs[i].a:
-					mirrorList[mirror] = bookAttrs[i].a.attrs['href']
-					# print(mirrorList[mirror])
+			for i in range(10, 14):
+				if i == 12:
+					pass
+				else:
+					if i == 13:
+						mirror = i - 11
+					else:
+						mirror = i - 10
+					if bookAttrs[i].a:
+						mirrorList[mirror] = bookAttrs[i].a.attrs['href']
+						#print(mirrorList[mirror])
 			book = (str(contBook), author, tinytitle, publisher,
 					year, lang, ext, size) # starts at 1
 
@@ -100,13 +104,12 @@ def selectBook(books, mirrors, page, nBooks):
 				else:
 					numberOfMirrors = len(mirrors[choice]['mirrors'])
 					printList = (
-						"#1: Mirror bookdescr.org (default)",
-						"#2: Mirror libgen.lc (WORKING)",
-						"#3: Mirror b-ok.cc (BROKEN)",
-						"#4: Mirror libgen.pw (BROKEN)",
-						"#5: Mirror bookfi.net")
+						"#1: Mirror libgen.lc (default)",
+						"#2: Mirror b-ok.cc",
+						"#3: Mirror bookfi.cc")
 
 					while SHOW_MIRRORS:
+						print(numberOfMirrors)
 						print("\nMirrors Availble: \n")
 						avaMirrors = list(mirrors[choice]['mirrors'].keys())
 						for mir in avaMirrors:
@@ -128,14 +131,6 @@ def selectBook(books, mirrors, page, nBooks):
 								DownloadBook.thirdMirror(
 									mirrors[choice]['mirrors'][2], title)
 								pass
-							elif int(option) == 4:
-								DownloadBook.fourthMirror(
-									mirrors[choice]['mirrors'][3], title)
-								pass
-							elif int(option) == 5:
-								DownloadBook.fifthMirror(
-									mirrors[choice]['mirrors'][4], title)
-
 							return(False)
 
 						elif option == 'q' or option == 'Q': # Quit
@@ -193,19 +188,6 @@ class DownloadBook():
 			print('The download path does not exist. Change it in settings.py')
 
 	def defaultMirror(link, filename):
-		'''This is default and first mirror to download.
-		The base of this mirror is 93.174.95.29 or gen.lib.rus'''
-		req = request.Request(link, headers=DownloadBook.headers)
-		source = request.urlopen(req)
-		soup = BeautifulSoup(source, 'lxml')
-		motherUrl = "http://93.174.95.29"
-
-		for a in soup.find_all('a'):
-			if a.text == 'GET':
-				downloadUrl = a.attrs['href']
-				DownloadBook.saveBook(motherUrl + downloadUrl, filename)
-
-	def secondMirror(link, filename):
 		'''Second mirror to download.
 		Base is https://libgen.lc'''
 		req = request.Request(link, headers=DownloadBook.headers)
@@ -216,13 +198,14 @@ class DownloadBook():
 				downloadUrl = a.attrs['href']
 				DownloadBook.saveBook(downloadUrl, filename)
 
-	def thirdMirror(link, filename):
+	def secondMirror(link, filename):
 		'''Third mirror to download.
 		Base is http://b-ok.cc'''
+		motherUrl = "https://b-ok.cc"
+
 		req = request.Request(link, headers=DownloadBook.headers)
 		source = request.urlopen(req)
 		soup = BeautifulSoup(source, 'lxml')
-		motherUrl = "https://b-ok.cc"
 		mLink = soup.find(attrs={"style": "text-decoration: underline;"})
 		nextLink = mLink.attrs['href']
 		nextReq = request.Request(motherUrl + nextLink, headers=DownloadBook.headers)
@@ -233,26 +216,7 @@ class DownloadBook():
 				item_url = next_a.attrs['href']
 				DownloadBook.saveBook(motherUrl + item_url, filename)
 
-	def fourthMirror(link, filename):
-		'''This is the fourth mirror to download.
-		The base of this mirror is https://libgen.pw'''
-		req = request.Request(link, headers=DownloadBook.headers)
-		source = request.urlopen(req)
-		soup = BeautifulSoup(source, 'lxml')
-		motherUrl = "https://libgen.pw"
-		
-		for a in soup.find_all('a'):
-			if a.text == 'DOWNLOAD':
-				next_link = a.attrs['href']
-				next_req = request.Request(mother_url + next_link, headers=DownloadBook.headers)
-				next_source = request.urlopen(next_req)
-				next_soup = BeautifulSoup(next_source, 'lxml')
-				for next_a in next_soup.find_all('a'):
-					if ' Download  ' in next_a.text:
-						item_url = next_a.attrs['href']
-						DownloadBook.save_book(mother_url + item_url, filename)
-
-	def fifthMirror(link, filename):
+	def thirdMirror(link, filename):
 		'''This is the fifth mirror to download.
 		The base of this mirror is https://bookfi.net'''
 		req = request.Request(link, headers=DownloadBook.headers)
@@ -312,4 +276,3 @@ if __name__ == '__main__':
 			get_next_page = selectBook(books, mirrors, page - 1, nBooks)
 		else:	# 0 matches total
 			get_next_page = False
-
