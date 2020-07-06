@@ -49,7 +49,7 @@ def formatBooks(books, page):
 			size = bookAttrs[7].text
 			ext = bookAttrs[8].text
 			mirrorList = {}			# Dictionary for all four mirrors
-			mirrorList[0] = bookAttrs[i].a.attrs['href']
+			mirrorList[0] = bookAttrs[10].a.attrs['href']
 			book = (str(contBook), author, tinytitle, publisher,
 					year, lang, ext, size) # starts at 1
 			bookMirrors = {'title': title, 'mirrors': mirrorList}
