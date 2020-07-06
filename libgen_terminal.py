@@ -49,20 +49,9 @@ def formatBooks(books, page):
 			size = bookAttrs[7].text
 			ext = bookAttrs[8].text
 			mirrorList = {}			# Dictionary for all four mirrors
-			for i in range(10, 14):
-				if i == 12:
-					pass
-				else:
-					if i == 13:
-						mirror = i - 11
-					else:
-						mirror = i - 10
-					if bookAttrs[i].a:
-						mirrorList[mirror] = bookAttrs[i].a.attrs['href']
-						#print(mirrorList[mirror])
+			mirrorList[0] = bookAttrs[i].a.attrs['href']
 			book = (str(contBook), author, tinytitle, publisher,
 					year, lang, ext, size) # starts at 1
-
 			bookMirrors = {'title': title, 'mirrors': mirrorList}
 			booksMirrors.append(bookMirrors)
 			contBook += 1
@@ -122,14 +111,6 @@ def selectBook(books, mirrors, page, nBooks):
 							if int(option) == 1:
 								DownloadBook.defaultMirror(
 									mirrors[choice]['mirrors'][0], title)
-								pass
-							elif int(option) == 2:
-								DownloadBook.secondMirror(
-									mirrors[choice]['mirrors'][1], title)
-								pass
-							elif int(option) == 3:
-								DownloadBook.thirdMirror(
-									mirrors[choice]['mirrors'][2], title)
 								pass
 							return(False)
 
