@@ -98,7 +98,6 @@ def selectBook(books, mirrors, page, nBooks):
 						"#3: Mirror bookfi.cc")
 
 					while SHOW_MIRRORS:
-						print(numberOfMirrors)
 						print("\nMirrors Availble: \n")
 						avaMirrors = list(mirrors[choice]['mirrors'].keys())
 						for mir in avaMirrors:
