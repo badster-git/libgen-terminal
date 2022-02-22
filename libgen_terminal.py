@@ -35,7 +35,7 @@ def formatBooks(books, page):
 	for rawBook in books:
 		bookAttrs = rawBook.find_all('td')
 
-		if len(bookAttrs) >= 14:
+		if len(bookAttrs) >= 13:
 			authors = [a.text for a in bookAttrs[1].find_all('a')]
 			author = ', '.join(authors[:N_AUTHORS])
 			author = author[:MAX_CHARS_AUTHORS]
@@ -49,7 +49,9 @@ def formatBooks(books, page):
 			size = bookAttrs[7].text
 			ext = bookAttrs[8].text
 			mirrorList = {}			# Dictionary for all four mirrors
-			mirrorList[0] = bookAttrs[10].a.attrs['href']
+			for i,x in zip(range(9, 12), range(0,3)):
+				if bookAttrs[i].a:
+					mirrorList[x] = bookAttrs[i].a.attrs['href']
 			book = (str(contBook), author, tinytitle, publisher,
 					year, lang, ext, size) # starts at 1
 			bookMirrors = {'title': title, 'mirrors': mirrorList}
@@ -82,7 +84,7 @@ def selectBook(books, mirrors, page, nBooks):
 				title = '{}.{}'.format(
 					mirrors[choice]['title'], books[choice][-2])
 
-				if False:
+				if SHOW_MIRRORS == False:
 					''' This is the default mirror.
 					In case other mirrors work, change True to
 					a boolean variable defined in settings.py
@@ -93,12 +95,12 @@ def selectBook(books, mirrors, page, nBooks):
 				else:
 					numberOfMirrors = len(mirrors[choice]['mirrors'])
 					printList = (
-						"#1: Mirror libgen.lc (default)",
-						"#2: Mirror b-ok.cc",
-						"#3: Mirror bookfi.cc")
+						"#1: Mirror library.lol (default)",
+						"#2: Mirror booksdl.org",
+						"#3: Mirror 3lib.net [UNSTABLE AND DL LIMIT]")
 
 					while SHOW_MIRRORS:
-						print("\nMirrors Availble: \n")
+						print("\nMirrors Availble:")
 						avaMirrors = list(mirrors[choice]['mirrors'].keys())
 						for mir in avaMirrors:
 							print(printList[mir])
@@ -111,6 +113,10 @@ def selectBook(books, mirrors, page, nBooks):
 								DownloadBook.defaultMirror(
 									mirrors[choice]['mirrors'][0], title)
 								pass
+							elif int(option) == 2:
+								DownloadBook.secondMirror(mirrors[choice]['mirrors'][1], title)
+							elif int(option) == 3:
+								DownloadBook.thirdMirror(mirrors[choice]['mirrors'][2], title)
 							return(False)
 
 						elif option == 'q' or option == 'Q': # Quit
@@ -139,8 +145,8 @@ def selectBook(books, mirrors, page, nBooks):
 			print('Not a valid option')
 
 class DownloadBook():
-	userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11'
-	accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+	userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36'
+	accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'
 	acceptCharset = 'ISO-8859-1,utf-8;q=0.7,*,q=0.3'
 	acceptLang = 'en-US,en;q=0.8'
 	connection = 'keep-alive'
@@ -179,34 +185,40 @@ class DownloadBook():
 				DownloadBook.saveBook(downloadUrl, filename)
 
 	def secondMirror(link, filename):
-		'''Third mirror to download.
-		Base is http://b-ok.cc'''
-		motherUrl = "https://b-ok.cc"
-
+		'''Second mirror to download.'''
 		req = request.Request(link, headers=DownloadBook.headers)
+		slash = (str(link).find('/', 10))
+		baseLink = (str(link)[:slash])+'/'
 		source = request.urlopen(req)
 		soup = BeautifulSoup(source, 'lxml')
-		mLink = soup.find(attrs={"style": "text-decoration: underline;"})
-		nextLink = mLink.attrs['href']
-		nextReq = request.Request(motherUrl + nextLink, headers=DownloadBook.headers)
-		nextSource = request.urlopen(nextReq)
-		nextSoup = BeautifulSoup(nextSource, 'lxml')
-		for next_a in nextSoup.find_all('a'):
-			if ' Download  ' in next_a.text:
-				item_url = next_a.attrs['href']
-				DownloadBook.saveBook(motherUrl + item_url, filename)
+		for next_a in soup.find_all('a'):
+			if 'GET' in next_a.text:
+				downloadUrl = baseLink + next_a.attrs['href']
+				DownloadBook.saveBook(downloadUrl, filename)
 
 	def thirdMirror(link, filename):
-		'''This is the fifth mirror to download.
-		The base of this mirror is https://bookfi.net'''
+		'''This is the third mirror to download.
+		The base of this mirror is https://3lib.net'''
+		# Get download page
+		slash = (str(link).find('/', 9))
+		baseLink = (str(link)[:slash])
 		req = request.Request(link, headers=DownloadBook.headers)
 		source = request.urlopen(req)
 		soup = BeautifulSoup(source, 'lxml')
-
 		for a in soup.find_all('a'):
-			if 'Скачать' in a.text:
-				download_url = a.attrs['href']
-				DownloadBook.saveBook(download_url, filename)
+			if('href' in a.attrs):
+				if ('/book/' in a.attrs['href']):
+					downloadPageUrl = baseLink + a.attrs['href']
+
+		# Download from download page
+		if (downloadPageUrl):
+			req = request.Request(downloadPageUrl, headers=DownloadBook.headers)
+			source = request.urlopen(req)
+			dlLink = baseLink + BeautifulSoup(source, 'lxml').select_one('a.dlButton.addDownloadedBook').attrs['href']
+			if (dlLink):
+				DownloadBook.saveBook(dlLink, filename)
+		else: return False
+
 
 
 if __name__ == '__main__':
