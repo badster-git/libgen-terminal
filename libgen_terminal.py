@@ -25,6 +25,23 @@ class LibGenParser(object):
 		return 25
 
 	@staticmethod
+	def __parsePageBooksFound(page_soup = None) -> int:
+		if page_soup is None:
+			return None
+
+		re_files_found = page_soup.find_all('font', string=re.compile(r"(.*files found)"))
+
+		if re_files_found is None:
+			return None
+
+		re_num_files = re.match(r'(\d*).*files found',re_files_found[0].text.strip())
+
+		if re_num_files is None:
+			return None
+
+		return int(re_num_files.group(1))
+
+	@staticmethod
 	def __parsePageBooks(curr_page, page_soup = None):
 		if page_soup is None:
 			return None
@@ -94,6 +111,7 @@ class LibGenParser(object):
 			return None
 
 		parsed_books = LibGenParser.__parsePageBooks(curr_page, page_soup)
+		parsed_total_books = LibGenParser.__parsePageBooksFound(page_soup)
 		parsed_pages = LibGenParser.__parsePagePagesFound(page_soup)
 
 
@@ -106,7 +124,7 @@ class LibGenParser(object):
 		# 	# 	self.getLibgenLink(params, index=1)
 		# 	return None
 
-		return {"parsedBooks": parsed_books, "parsedPages": parsed_pages, "currentPage": curr_page}
+		return {"parsedBooks": parsed_books, "parsedPages": parsed_pages, "currentPage": curr_page, "totalBooks": parsed_total_books}
 
 class LibGenScraper(object):
 	def __init__(self) -> None:
@@ -337,8 +355,8 @@ if __name__ == "__main__":
 		# Get results from params
 		results = lg_scraper.getSearchResults(params)
 		# print(results)
-		Helper.formatOutput(data=results)
-		Helper.selectBook(results["parsedBooks"], results["parsedPages"], results["currentPage"])
+		# Helper.formatOutput(data=results)
+		# Helper.selectBook(results["parsedBooks"], results["parsedPages"], results["currentPage"])
 
 		
 		# TODO: Implement select book function to allow downloading books via terminal
