@@ -80,21 +80,22 @@ class Helper(object):
         print(tabulate(tabulate_data, headers="keys"))
 
     @staticmethod
-    def selectBook(books=[], total_pages=0, curr_page=0) -> dict:
-        # no_more_books = 
+    def selectBook(books=[], total_pages=0, curr_page=0, total_books=0):
+        no_more_books = total_books == len(books)
+
+        if no_more_books:
+            print("\nEND OF LIST. NO MORE BOOKS FOUND.")
 
         while curr_page < total_pages:
             choice = (
                 input("Type # of book to download or q to quit: ")
-                if total_pages < 25
+                if no_more_books
                 else input(
                     "Type # of book to download, q to quit or Enter to load next page: "
                 )
             )
-
             if choice.isnumeric():
                 book_num = int(choice) - 1
-
                 if book_num < len(books) and book_num >= 0:
                     print(
                         f"Downloading {books[book_num]['Title']} by {books[book_num]['Author']}..."
@@ -103,9 +104,9 @@ class Helper(object):
                 else:
                     print("Not a valid range. Try again.")
                     continue
-            elif choice.lower() == 'q':
+            elif choice.lower() == "q":
                 exit()
-                
-            
+            elif not choice:
+                if not no_more_books:
+                    return True
             print("Not a valid option. Try again.")
-            

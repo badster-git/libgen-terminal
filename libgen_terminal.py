@@ -106,25 +106,25 @@ class LibGenParser(object):
 		}
 
 	@staticmethod
-	def parsePageSoup(page_soup = None, curr_page = 0):
+	def __getInitialData(page_soup) -> dict:
+		parsed_pages = LibGenParser.__parsePagePagesFound(page_soup)
+		parsed_total_books = LibGenParser.__parsePageBooksFound(page_soup)
+
+		return {"parsedPages": parsed_pages, "totalBooks": parsed_total_books}
+
+
+	@staticmethod
+	def parsePageSoup(page_soup = None, curr_page = 0, data = None):
 		if page_soup is None:
 			return None
 
 		parsed_books = LibGenParser.__parsePageBooks(curr_page, page_soup)
-		parsed_total_books = LibGenParser.__parsePageBooksFound(page_soup)
-		parsed_pages = LibGenParser.__parsePagePagesFound(page_soup)
 
+		if curr_page == 1 or data is None:
+			initial_data = LibGenParser.__getInitialData(page_soup)
+			return {"parsedBooks": parsed_books, "parsedPages": initial_data["parsedPages"], "currentPage": curr_page, "totalBooks": initial_data["totalBooks"]}
 
-		# pagesFound = page_soup.find_all("tr")
-		# if pagesFound == None:
-		# 	print("No results found")
-		# 	# TODO: Implement function to try all urls to see if any results are found
-		# 	# doTry = input("Try a different url?:(Y/n)")
-		# 	# if doTry.lower() == 'y':
-		# 	# 	self.getLibgenLink(params, index=1)
-		# 	return None
-
-		return {"parsedBooks": parsed_books, "parsedPages": parsed_pages, "currentPage": curr_page, "totalBooks": parsed_total_books}
+		return {"parsedBooks": data["parsedBooks"] + parsed_books, "parsedPages": data["parsedPages"], "currentPage": curr_page, "totalBooks": data["totalBooks"]}
 
 class LibGenScraper(object):
 	def __init__(self) -> None:
@@ -137,7 +137,7 @@ class LibGenScraper(object):
 
 		raise SystemExit("Couldn't find valid libgen link. Exiting.")
 
-	def getSearchResults(self, params) -> dict:
+	def getSearchResults(self, params, data = None) -> dict:
 		"""
 		getSearchResults gets results from page based on search parameters
 		:param params: dictionary containing search results
@@ -145,8 +145,7 @@ class LibGenScraper(object):
 		"""
 		libgen_link = self.getLibgenLink(params)
 		page_soup = Helper.getSoup(libgen_link)
-		curr_page = params['page']
-		parsed_data = LibGenParser.parsePageSoup(page_soup, curr_page)
+		parsed_data = LibGenParser.parsePageSoup(page_soup, params['page'], data)
 
 		# LibGenScraper.__formatResults(parsed_data)
 		return parsed_data
@@ -346,37 +345,24 @@ if __name__ == "__main__":
 
 	page = 1
 	get_next_page = True
-
-	params = {"req": search_term, "page": page, "col": selColumn}
+	data = {}
 
 	lg_scraper = LibGenScraper()
 
 	while get_next_page:
+		params = {"req": search_term, "page": page, "col": selColumn}
 		# Get results from params
-		results = lg_scraper.getSearchResults(params)
-		# print(results)
-		# Helper.formatOutput(data=results)
-		# Helper.selectBook(results["parsedBooks"], results["parsedPages"], results["currentPage"])
+		results = lg_scraper.getSearchResults(params, data)
+		Helper.formatOutput(data=results)
 
-		
-		# TODO: Implement select book function to allow downloading books via terminal
-
-
-
-		break
-
-		# if page == 1:
-		#     rawBooks, nBooks = getSearchResults(search_term, page, selColumn)
-		# else:
-		#     rawBooks = getSearchResults(search_term, page, selColumn)
-
-		# if rawBooks:
-		#     newBooks, newMirrors = formatBooks(rawBooks, page)
-		#     books += newBooks
-		#     mirrors += newMirrors
-		#     get_next_page = selectBook(books, mirrors, page, nBooks)
-		#     page += 1
-		# elif rawBooks == [] and nBooks != 0:  # matches 0 in last page
-		#     get_next_page = selectBook(books, mirrors, page - 1, nBooks)
-		# else:  # 0 matches total
-		# get_next_page = False
+		selected_book = Helper.selectBook(results["parsedBooks"], results["parsedPages"], results["currentPage"], results["totalBooks"])
+		if isinstance(selected_book, dict):
+			# Valid book dict
+			pass
+		elif isinstance(selected_book, bool):
+			# get next page
+			page += 1
+			data = results
+			continue
+		else:
+			get_next_page = False
