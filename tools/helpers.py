@@ -26,7 +26,6 @@ class Helper(object):
     @staticmethod
     def encodeLink(url, params):
         # params = urlencode({'req': term, 'column': column, 'page': page})
-        print(f"{url}/search.php?&%s" % urlencode(params))
         return f"{url}/search.php?&%s" % urlencode(params)
 
     @staticmethod
@@ -100,7 +99,7 @@ class Helper(object):
                     print(
                         f"Downloading {books[book_num]['Title']} by {books[book_num]['Author']}..."
                     )
-                    break
+                    return books[book_num]
                 else:
                     print("Not a valid range. Try again.")
                     continue
@@ -110,3 +109,34 @@ class Helper(object):
                 if not no_more_books:
                     return True
             print("Not a valid option. Try again.")
+
+    @staticmethod
+    def downloadFile(url, filepath):
+        def reportHook(count, block_size, total_size):
+            """
+            This function was grabbed from: https://blog.shichao.io/2012/10/04/progress_speed_indicator_for_urlretrieve_in_python.html
+            """
+            import time, sys
+
+            global start_time
+            if count == 0:
+                start_time = time.time()
+                return
+            duration = time.time() - start_time
+            progress_size = int(count * block_size)
+            speed = int(progress_size / (1024 * (int(duration) + 1)))
+            percent = min(int(count * block_size * 100 / total_size), 100)
+            sys.stdout.write(
+                "\r%d%%, %d MB, %d KB/s, %d seconds passed"
+                % (percent, progress_size / (1024 * 1024), speed, duration)
+            )
+            sys.stdout.flush()
+
+        print(f"\nDownloading from {url}...\n")
+        try:
+            request.urlretrieve(url, filepath, reportHook)
+        except Exception as e:
+            print(f"Error downloading file: {e}")
+            return False
+        else:
+            return True

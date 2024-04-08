@@ -102,7 +102,7 @@ class LibGenParser(object):
 			"Language": lang,
 			"Extension": ext,
 			"Size": size,
-			"MirrorList": mirror_list
+			"Mirrors": mirror_list
 		}
 
 	@staticmethod
@@ -112,6 +112,15 @@ class LibGenParser(object):
 
 		return {"parsedPages": parsed_pages, "totalBooks": parsed_total_books}
 
+	@staticmethod
+	def __parseDownloadPage(page_soup):
+		re_dl_link = page_soup.find_all('a', {"href": re.compile("(.*download\.library.*)|(.*get\.php.*)")})
+
+		if re_dl_link is None:
+			return None
+
+		dl_link = re_dl_link[0]['href']
+		return dl_link
 
 	@staticmethod
 	def parsePageSoup(page_soup = None, curr_page = 0, data = None):
@@ -125,6 +134,14 @@ class LibGenParser(object):
 			return {"parsedBooks": parsed_books, "parsedPages": initial_data["parsedPages"], "currentPage": curr_page, "totalBooks": initial_data["totalBooks"]}
 
 		return {"parsedBooks": data["parsedBooks"] + parsed_books, "parsedPages": data["parsedPages"], "currentPage": curr_page, "totalBooks": data["totalBooks"]}
+
+	@staticmethod
+	def parsePageDownload(page_soup = None):
+		if page_soup is None: return None
+
+		download_link = LibGenParser.__parseDownloadPage(page_soup)
+		return download_link
+
 
 class LibGenScraper(object):
 	def __init__(self) -> None:
@@ -150,156 +167,49 @@ class LibGenScraper(object):
 		# LibGenScraper.__formatResults(parsed_data)
 		return parsed_data
 
-	def getBookDownload(self):
-		pass
+	def downloadBook(self, book_mirrors = {}, file_extension = None, book_title = None):
+		if book_mirrors is None:
+			return None
 
-def formatBooks(books, page):
-	fmtBooks = []
-	booksMirrors = []  # List of dics with complete titles & mirrors
-	contBook = (page - 1) * 25 + 1
-	for rawBook in books:
-		bookAttrs = rawBook.find_all("td")
+		for book_mirror in book_mirrors.values():
+			if Helper.isValid(book_mirror):
+				page_soup = Helper.getSoup(book_mirror)
+				download_link = LibGenParser.parsePageDownload(page_soup)
 
-		if len(bookAttrs) >= 13:
-			authors = [a.text for a in bookAttrs[1].find_all("a")]
-			author = ", ".join(authors[:N_AUTHORS])
-			author = author[:MAX_CHARS_AUTHORS]
-
-			title = bookAttrs[2].find(title=True).text
-			tinytitle = title[:MAX_CHARS_TITLE]
-
-			publisher = bookAttrs[3].text[:MAX_CHARS_PUBLISHER]
-			year = bookAttrs[4].text
-			lang = bookAttrs[6].text[:2]  # Only first 2 chars
-			size = bookAttrs[7].text
-			ext = bookAttrs[8].text
-			mirrorList = {}  # Dictionary for all four mirrors
-			for i, x in zip(range(9, 12), range(0, 3)):
-				if bookAttrs[i].a:
-					mirrorList[x] = bookAttrs[i].a.attrs["href"]
-			book = (
-				str(contBook),
-				author,
-				tinytitle,
-				publisher,
-				year,
-				lang,
-				ext,
-				size,
-			)  # starts at 1
-			bookMirrors = {"title": title, "mirrors": mirrorList}
-			booksMirrors.append(bookMirrors)
-			contBook += 1
-			fmtBooks.append(book)
-	return (fmtBooks, booksMirrors)
-
-
-def selectBook(books, mirrors, page, nBooks):
-	headers = ["#", "Author", "Title", "Publisher", "Year", "Lang", "Ext", "Size"]
-
-	print(tabulate(books[(page - 1) * 25 : page * 25], headers))
-	# Detect when books are found
-	noMoreMatches = nBooks == len(books)
-
-	if noMoreMatches:
-		print("\nEND OF LIST. NO MORE BOOKS FOUND")
-
-	while True:
-		if noMoreMatches:
-			elec = input("Type # of book to download or q to quit: ")
-		else:
-			elec = input(
-				"\nType # of book to download, q to quit or just press Enter to see more matches: "
-			)
-
-		if elec.isnumeric():
-			choice = int(elec) - 1
-			if choice < len(books) and choice >= 0:  # Selection
-				title = "{}.{}".format(mirrors[choice]["title"], books[choice][-2])
-
-				if SHOW_MIRRORS == False:
-					"""This is the default mirror.
-					In case other mirrors work, change True to
-					a boolean variable defined in settings.py
-					that defines if user wants to have option
-					to select from different mirros."""
-					DownloadBook.defaultMirror(mirrors[choice]["mirrors"][0], title)
-				else:
-					numberOfMirrors = len(mirrors[choice]["mirrors"])
-					printList = (
-						"#1: Mirror library.lol (default)",
-						"#2: Mirror booksdl.org",
-						"#3: Mirror 3lib.net [UNSTABLE AND DL LIMIT]",
-					)
-
-					while SHOW_MIRRORS:
-						print("\nMirrors Availble:")
-						avaMirrors = list(mirrors[choice]["mirrors"].keys())
-						for mir in avaMirrors:
-							print(printList[mir])
-
-						option = input(
-							"\nType # of mirror to start download or q to quit: "
-						)
-
-						if (
-							option.isnumeric()
-							and int(option) > 0
-							and int(option) <= numberOfMirrors
-						):
-							if int(option) == 1:
-								DownloadBook.defaultMirror(
-									mirrors[choice]["mirrors"][0], title
-								)
-								pass
-							elif int(option) == 2:
-								DownloadBook.secondMirror(
-									mirrors[choice]["mirrors"][1], title
-								)
-							elif int(option) == 3:
-								DownloadBook.thirdMirror(
-									mirrors[choice]["mirrors"][2], title
-								)
-							return False
-
-						elif option == "q" or option == "Q":  # Quit
-							return False
-						else:
-							print("Not a valid option.")
-							continue
-
-				return False
-
-			else:
-				print("Couldn't fetch the book #{}".format(str(choice + 1)))
-				continue
-
-		elif elec == "q" or elec == "Q":  # Quit
-			return False
-
-		elif not elec:
-			if noMoreMatches:
-				print("Not a valid option")
-				continue
-			else:
-				return True
-
-		else:
-			print("Not a valid option")
-
+				did_save = DownloadBook.saveBook(download_link, file_extension, book_title)
+				if did_save:
+					return True
+		print("Could not find a working mirror.")
+		return False
 
 class DownloadBook:
 	@staticmethod
-	def saveBook(downloadLink, fileName):
-		if os.path.exists(DOWNLOAD_PATH) and os.path.isdir(DOWNLOAD_PATH):
-			badChars = '\/:*?"<>|'
-			for chars in badChars:
-				fileName = fileName.replace(chars, " ")
-			print("Downloading...")
-			path = "{}/{}".format(DOWNLOAD_PATH, fileName)
-			request.urlretrieve(downloadLink, filename=path)
-			print("Book downloaded to {}".format(os.path.abspath(path)))
-		elif os.path.isfile(DOWNLOAD_PATH):
+	def saveBook(download_link, file_extension, filename = None):
+		if os.path.exists(settings.DOWNLOAD_PATH) and os.path.isdir(settings.DOWNLOAD_PATH):
+			if filename is None:
+				"""Generate random filename"""
+				import string, random
+				filename = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
+
+
+			"""Cleanup filename"""
+			bad_chars = '\/:*?"<>|'
+			for chars in bad_chars:
+				filename = filename.replace(chars, " ")
+			if settings.RESTRICT_FILENAMES:
+				filename = filename.replace(" ", "_")
+
+			path = f"{settings.DOWNLOAD_PATH}/{filename}.{file_extension}"
+			did_download = Helper.downloadFile(download_link, path)
+
+
+			if did_download:
+				print(f"Book downloaded to {os.path.abspath(path)}")
+				return True
+			else:
+				print("Trying a different mirror...")
+				return False
+		elif os.path.isfile(settings.DOWNLOAD_PATH):
 			print("The download path is not a directory. Change it in settings.py")
 		else:
 			print("The download path does not exist. Change it in settings.py")
@@ -356,9 +266,18 @@ if __name__ == "__main__":
 		Helper.formatOutput(data=results)
 
 		selected_book = Helper.selectBook(results["parsedBooks"], results["parsedPages"], results["currentPage"], results["totalBooks"])
+
 		if isinstance(selected_book, dict):
 			# Valid book dict
-			pass
+			did_download = lg_scraper.downloadBook(selected_book['Mirrors'], selected_book["Extension"], selected_book["Title"])
+			if did_download:
+				print(f"\nSuccessfully Downloaded {selected_book['Title']}.")
+				choice = input("q to quit or anything else to download more books: ")
+				if choice.lower() == 'q':
+					exit()
+			else:
+				print(f"Could not download {selected_book['Title']}. Try a different book.")
+			continue
 		elif isinstance(selected_book, bool):
 			# get next page
 			page += 1
