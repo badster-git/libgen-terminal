@@ -48,8 +48,7 @@ class LibGenParser(object):
 
 		tables_elems = page_soup.find_all('table')
 		if tables_elems is None:
-			print("No tables found")
-			return None
+			raise SystemExit("No data tables found. Exiting")
 
 		results_table = tables_elems[-2]
 
@@ -113,7 +112,7 @@ class LibGenParser(object):
 		return {"parsedPages": parsed_pages, "totalBooks": parsed_total_books}
 
 	@staticmethod
-	def __parseDownloadPage(page_soup):
+	def __parsePageDownloadLinks(page_soup):
 		re_dl_link = page_soup.find_all('a', {"href": re.compile("(.*download\.library.*)|(.*get\.php.*)")})
 
 		if re_dl_link is None:
@@ -123,10 +122,8 @@ class LibGenParser(object):
 		return dl_link
 
 	@staticmethod
-	def parsePageSoup(page_soup = None, curr_page = 0, data = None):
-		if page_soup is None:
-			return None
-
+	def parsePageBookList(page_soup = None, curr_page = 0, data = None):
+		if page_soup is None: raise SystemExit("No book list page soup found. Exiting.")
 		parsed_books = LibGenParser.__parsePageBooks(curr_page, page_soup)
 
 		if curr_page == 1 or data is None:
@@ -137,37 +134,36 @@ class LibGenParser(object):
 
 	@staticmethod
 	def parsePageDownload(page_soup = None):
-		if page_soup is None: return None
+		if page_soup is None: raise SystemExit("No download page soup found. Exiting.")
 
-		download_link = LibGenParser.__parseDownloadPage(page_soup)
+		download_link = LibGenParser.__parsePageDownloadLinks(page_soup)
 		return download_link
 
 
 class LibGenScraper(object):
-	def __init__(self) -> None:
-		pass
-
-	def getLibgenLink(self, params=None, index=0):
+	@staticmethod
+	def getLibgenLink(params=None, index=0):
 		for link in settings.LIBGEN_MIRROR_LIST[index:]:
 			if Helper.isValid(link):
 				return Helper.encodeLink(link, params) if params else link
 
 		raise SystemExit("Couldn't find valid libgen link. Exiting.")
 
-	def getSearchResults(self, params, data = None) -> dict:
+	@staticmethod
+	def getSearchResults(params, data = None) -> dict:
 		"""
 		getSearchResults gets results from page based on search parameters
 		:param params: dictionary containing search results
 		:return: dictionary containing search results
 		"""
-		libgen_link = self.getLibgenLink(params)
+		libgen_link = LibGenScraper.getLibgenLink(params)
 		page_soup = Helper.getSoup(libgen_link)
-		parsed_data = LibGenParser.parsePageSoup(page_soup, params['page'], data)
+		parsed_data = LibGenParser.parsePageBookList(page_soup, params['page'], data)
 
-		# LibGenScraper.__formatResults(parsed_data)
 		return parsed_data
 
-	def downloadBook(self, book_mirrors = {}, file_extension = None, book_title = None):
+	@staticmethod
+	def downloadBook(book_mirrors = {}, file_extension = None, book_title = None):
 		if book_mirrors is None:
 			return None
 
@@ -257,19 +253,19 @@ if __name__ == "__main__":
 	get_next_page = True
 	data = {}
 
-	lg_scraper = LibGenScraper()
+	# lg_scraper = LibGenScraper()
 
 	while get_next_page:
 		params = {"req": search_term, "page": page, "col": selColumn}
 		# Get results from params
-		results = lg_scraper.getSearchResults(params, data)
+		results = LibGenScraper.getSearchResults(params, data)
 		Helper.formatOutput(data=results)
 
 		selected_book = Helper.selectBook(results["parsedBooks"], results["parsedPages"], results["currentPage"], results["totalBooks"])
 
 		if isinstance(selected_book, dict):
 			# Valid book dict
-			did_download = lg_scraper.downloadBook(selected_book['Mirrors'], selected_book["Extension"], selected_book["Title"])
+			did_download = LibGenScraper.downloadBook(selected_book['Mirrors'], selected_book["Extension"], selected_book["Title"])
 			if did_download:
 				print(f"\nSuccessfully Downloaded {selected_book['Title']}.")
 				choice = input("q to quit or anything else to download more books: ")

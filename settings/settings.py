@@ -10,7 +10,6 @@ MAX_CHARS_AUTHORS = (
 )
 MAX_CHARS_TITLE = 50  # Maximum characters displayed for the book title
 MAX_CHARS_PUBLISHER = 20  # Maximum characters displayed for the publisher.
-SHOW_MIRRORS = True  # Set to True or False depending if you want the program to show the download mirrors.
 RESTRICT_FILENAMES = True # Set to True depending if you want to replace spaces with '_' 
 
 # Tabulate Headers

@@ -24,7 +24,7 @@ class Helper(object):
         return soup
 
     @staticmethod
-    def encodeLink(url, params):
+    def encodeLink(url, params) -> str:
         # params = urlencode({'req': term, 'column': column, 'page': page})
         return f"{url}/search.php?&%s" % urlencode(params)
 
@@ -48,8 +48,22 @@ class Helper(object):
             return True
 
     @staticmethod
-    def formatOutput(headers=settings.TABULATE_HEADERS, data=None, page=0):
-        def prepareData(input_data):
+    def formatOutput(headers=settings.TABULATE_HEADERS, data=None, page=0) -> None:
+        """
+        formatOutput Prepares the input data for tabulate & prints using tabulate
+
+        :param headers: A list of strings needed for tabulate to correctly format output
+        :param data: A dictionary that contains scraped data from given url
+        :parm page: The current page number
+        """
+        def prepareData(input_data) -> dict:
+            # 
+            """
+            prepareData Seperates values from dictionary into key,value pairs according to the tabulate headers. The values are lists with all the books key value.
+
+            :param input_data: A dictionary that contains scraped data from given url
+            :return: Returns a dictionary with keys value pairs needed for tabulate to output data properly
+            """
             tabulate_data_dict = {}
 
             for key in headers:
@@ -61,17 +75,12 @@ class Helper(object):
                 ]:
                     if key == "#":
                         tabulate_data_array.append(str(book_dict["Count"]))
-                        # tabulate_data_dict[key] = str(book_dict['Count'])
                     elif key == "Lang":
                         tabulate_data_array.append(str(book_dict["Language"]))
-                        # tabulate_data_dict[key] = str(book_dict['Language'])
                     elif key == "Ext":
                         tabulate_data_array.append(str(book_dict["Extension"]))
-                        # tabulate_data_dict[key] = str(book_dict['Extension'])
                     else:
                         tabulate_data_array.append(str(book_dict[key]))
-                        # tabulate_data_dict[key] = book_dict[key]
-                # tabulate_data_array.append(tabulate_data_dict.copy())
                 tabulate_data_dict[key] = tabulate_data_array
             return tabulate_data_dict
 
