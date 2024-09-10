@@ -10,7 +10,9 @@ MAX_CHARS_AUTHORS = (
 )
 MAX_CHARS_TITLE = 50  # Maximum characters displayed for the book title
 MAX_CHARS_PUBLISHER = 20  # Maximum characters displayed for the publisher.
-RESTRICT_FILENAMES = True # Set to True depending if you want to replace spaces with '_' 
+RESTRICT_FILENAMES = (
+    True  # Set to True depending if you want to replace spaces with '_'
+)
 
 # Tabulate Headers
 TABULATE_HEADERS = ["#", "Author", "Title", "Publisher", "Year", "Lang", "Ext", "Size"]
@@ -36,6 +38,8 @@ LIBGEN_MIRROR_LIST = [
     "https://libgen.li",
     "https://libgen.rs",
     "https://libgen.st",
+    "https://libgen.gs",
+    "https://libgen.vg",
 ]
 
 # Requests Settings

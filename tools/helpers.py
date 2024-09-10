@@ -37,6 +37,7 @@ class Helper(object):
         :return: Boolean indicating whether link is valid
         """
         try:
+            print(url)
             r = request.urlopen(url)
         except urrlib_error.HTTPError as e:
             print(f"HTTPError: {e}")
@@ -56,8 +57,9 @@ class Helper(object):
         :param data: A dictionary that contains scraped data from given url
         :parm page: The current page number
         """
+
         def prepareData(input_data) -> dict:
-            # 
+            #
             """
             prepareData Seperates values from dictionary into key,value pairs according to the tabulate headers. The values are lists with all the books key value.
 
@@ -69,8 +71,7 @@ class Helper(object):
             for key in headers:
                 tabulate_data_array = []
                 for book_dict in input_data["parsedBooks"][
-                    (input_data["currentPage"] - 1)
-                    * 25 : input_data["currentPage"]
+                    (input_data["currentPage"] - 1) * 25 : input_data["currentPage"]
                     * 25
                 ]:
                     if key == "#":
@@ -91,10 +92,14 @@ class Helper(object):
     def selectBook(books=[], total_pages=0, curr_page=0, total_books=0):
         no_more_books = total_books == len(books)
 
+        if curr_page == 0 and len(books) == 0:
+            print("\nNO BOOKS RETURNED")
+            exit()
+
         if no_more_books:
             print("\nEND OF LIST. NO MORE BOOKS FOUND.")
 
-        while curr_page < total_pages:
+        while curr_page <= total_pages:
             choice = (
                 input("Type # of book to download or q to quit: ")
                 if no_more_books
