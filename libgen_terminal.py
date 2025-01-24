@@ -1,11 +1,12 @@
 import argparse, re, os
+from urllib.parse import urlparse
 
-from tabulate import tabulate
 from settings import settings
 from tools.helpers import Helper
 
 
 class LibGenParser(object):
+
     @staticmethod
     def __parsePagePagesFound(page_soup=None) -> int:
         if page_soup is None:
@@ -132,10 +133,11 @@ class LibGenParser(object):
             "a", {"href": re.compile("(.*download\.library.*)|(.*get\.php.*)")}
         )
 
-        if re_dl_link is None:
+        if re_dl_link is None or len(re_dl_link) == 0:
             return None
 
         dl_link = re_dl_link[0]["href"]
+
         return dl_link
 
     @staticmethod
@@ -171,7 +173,7 @@ class LibGenParser(object):
 
 class LibGenScraper(object):
     @staticmethod
-    def getLibgenLink(params=None, index=0):
+    def getLibgenLink(self, params=None, index=0):
         for link in settings.LIBGEN_MIRROR_LIST[index:]:
             if Helper.isValid(link):
                 return Helper.encodeLink(link, params) if params else link
@@ -185,7 +187,7 @@ class LibGenScraper(object):
         :param params: dictionary containing search results
         :return: dictionary containing search results
         """
-        libgen_link = LibGenScraper.getLibgenLink(params)
+        libgen_link = LibGenScraper.getLibgenLink(params=params)
         page_soup = Helper.getSoup(libgen_link)
         parsed_data = LibGenParser.parsePageBookList(page_soup, params["page"], data)
 
@@ -198,8 +200,15 @@ class LibGenScraper(object):
 
         for book_mirror in book_mirrors.values():
             if Helper.isValid(book_mirror):
+                parsed_url = urlparse(book_mirror)
                 page_soup = Helper.getSoup(book_mirror)
                 download_link = LibGenParser.parsePageDownload(page_soup)
+
+                if download_link is None:
+                    continue
+
+                if "http://" not in download_link or "https://" not in download_link:
+                    download_link = f"{parsed_url.scheme}://{parsed_url.netloc}/{download_link}"
 
                 did_save = DownloadBook.saveBook(
                     download_link, file_extension, book_title

@@ -18,8 +18,9 @@ class Helper(object):
         :param url: url to get soup from
         :return: a BeautifulSoup object
         """
-        r = request.urlopen(url)
-        soup = BeautifulSoup(r.read(), features="lxml")
+        req = request.Request(url)
+        req.add_header('User-Agent', settings.USER_AGENT_HEADER)
+        soup = BeautifulSoup(request.urlopen(req).read(), features="lxml")
 
         return soup
 
@@ -38,7 +39,9 @@ class Helper(object):
         """
         try:
             print(url)
-            r = request.urlopen(url)
+            req = request.Request(url)
+            req.add_header('User-Agent', settings.USER_AGENT_HEADER)
+            _ = request.urlopen(req)
         except urrlib_error.HTTPError as e:
             print(f"HTTPError: {e}")
             return False
@@ -147,10 +150,18 @@ class Helper(object):
             sys.stdout.flush()
 
         print(f"\nDownloading from {url}...\n")
+        custom_urlretrieve = CustomURLopener()
         try:
-            request.urlretrieve(url, filepath, reportHook)
+            custom_urlretrieve.retrieve(url, filepath, reportHook)
         except Exception as e:
             print(f"Error downloading file: {e}")
             return False
         else:
             return True
+
+class CustomURLopener(request.FancyURLopener):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.addheaders = [
+            ("User-Agent", settings.USER_AGENT_HEADER)  
+        ]

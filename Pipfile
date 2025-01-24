@@ -5,12 +5,12 @@ name = "pypi"
 
 [packages]
 bs4 = "==0.0.1"
-lxml = "==4.9.1"
 tabulate = "==0.8.9"
 beautifulsoup4 = "==4.10.0"
 soupsieve = "==2.3.1"
-
-[dev-packages]
+lxml = "*"
 
 [requires]
 python_version = "3.11"
+
+[dev-packages]
