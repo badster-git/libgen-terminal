@@ -173,7 +173,7 @@ class LibGenParser(object):
 
 class LibGenScraper(object):
     @staticmethod
-    def getLibgenLink(self, params=None, index=0):
+    def getLibgenLink(params=None, index=0):
         for link in settings.LIBGEN_MIRROR_LIST[index:]:
             if Helper.isValid(link):
                 return Helper.encodeLink(link, params) if params else link
