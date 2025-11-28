@@ -19,7 +19,9 @@ class Helper(object):
         :return: a BeautifulSoup object
         """
         req = request.Request(url)
+        print(req, url)
         req.add_header('User-Agent', settings.USER_AGENT_HEADER)
+        # print(req)
         soup = BeautifulSoup(request.urlopen(req).read(), features="lxml")
 
         return soup
@@ -27,7 +29,7 @@ class Helper(object):
     @staticmethod
     def encodeLink(url, params) -> str:
         # params = urlencode({'req': term, 'column': column, 'page': page})
-        return f"{url}/search.php?&%s" % urlencode(params)
+        return f"{url}/index.php?&%s" % urlencode(params)
 
     @staticmethod
     def isValid(url):
@@ -41,12 +43,15 @@ class Helper(object):
             print(url)
             req = request.Request(url)
             req.add_header('User-Agent', settings.USER_AGENT_HEADER)
-            _ = request.urlopen(req)
+            _ = request.urlopen(req, timeout=5)
         except urrlib_error.HTTPError as e:
             print(f"HTTPError: {e}")
             return False
         except urrlib_error.URLError as e:
             print(f"URLError: {e}")
+            return False
+        except Exception as e:
+            print(f"Unknown Exception: {e}")
             return False
         else:
             return True

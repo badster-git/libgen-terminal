@@ -288,10 +288,10 @@ if __name__ == "__main__":
 
     search_term = " ".join(args.search)
     search_arguments = [
-        (args.title, "title"),
-        (args.author, "author"),
-        (args.publisher, "publisher"),
-        (args.year, "year"),
+        (args.title, "t"),
+        (args.author, "a"),
+        (args.publisher, "p"),
+        (args.year, "y"),
     ]
 
     selColumn = "def"
@@ -306,7 +306,7 @@ if __name__ == "__main__":
     # lg_scraper = LibGenScraper()
 
     while get_next_page:
-        params = {"req": search_term, "page": page, "col": selColumn}
+        params = {"req": search_term, "page": page, "columns": selColumn}
         # Get results from params
         results = LibGenScraper.getSearchResults(params, data)
         Helper.formatOutput(data=results)
